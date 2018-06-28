@@ -620,32 +620,44 @@
                                 {
                                     "Effect": "Allow",
                                     "Action": [
-                                        "cloud9:DescribeEnvironments",
-                                        "cloud9:ListEnvironments",
-                                        "cloud9:GetUserPublicKey",
-                                        "cloud9:GetUserSettings",
-                                        "cloud9:GetEnvironmentConfig",
-                                        "cloud9:UpdateUserSettings",
-                                        "cloud9:ValidateEnvironmentName",
-                                        "ec2:DescribeSubnets",
-                                        "ec2:DescribeVpcs",
-                                        "ec2:AuthorizeSecurityGroupIngress",
-                                        "ec2:RevokeSecurityGroupIngress",
-                                        "iam:GetUser",
-                                        "iam:ListUsers"
+                                        "ec2:Describe*",
+                                        "s3:Get*",
+                                        "s3:List*",
+                                        "s3:PutObject",
+                                        "guardduty:List*",
+                                        "guardduty:Get*",
+                                        "guardduty:DeleteDetector",
+                                        "guardduty:UpdateDetector",
+                                        "guardduty:CreateIPSet",
+                                        "guardduty:DeleteIPSet",
+                                        "guardduty:UpdateIPSet",
+                                        "guardduty:CreateThreatIntelSet",
+                                        "guardduty:DeleteThreatIntelSet",
+                                        "guardduty:UpdateThreatIntelSet",
+                                        "guardduty:CreateSampleFindings"
                                     ],
                                     "Resource": "*"
                                 },
                                 {
                                     "Effect": "Allow",
                                     "Action": [
-                                        "cloud9:DescribeEnvironmentMemberships"
+                                        "iam:CreateServiceLinkedRole"
                                     ],
-                                    "Resource": "*",
+                                    "Resource": {
+                                        "Fn::Join": [
+                                            "",
+                                            [
+                                                "arn:aws:iam::",
+                                                {
+                                                    "Ref": "AWS::AccountId"
+                                                },
+                                                ":role/aws-service-role/guardduty.amazonaws.com/AWSServiceRoleForAmazonGuardDuty"
+                                            ]
+                                        ]
+                                    },
                                     "Condition": {
-                                        "Null": {
-                                            "cloud9:UserArn": "true",
-                                            "cloud9:EnvironmentId": "true"
+                                        "StringLike": {
+                                            "iam:AWSServiceName": "guardduty.amazonaws.com"
                                         }
                                     }
                                 },
