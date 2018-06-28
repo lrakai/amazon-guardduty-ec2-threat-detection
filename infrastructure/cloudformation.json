@@ -40,6 +40,12 @@
         }
     },
     "Resources": {
+        "ThreatList": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "AccessControl": "PublicRead"
+            }
+        },
         "TestInstance": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
