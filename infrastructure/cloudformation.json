@@ -303,7 +303,7 @@
                 "CidrBlock": {
                     "Fn::FindInMap": [
                         "SubnetConfig",
-                        "VPC",
+                        "TestVPC",
                         "CIDR"
                     ]
                 },
@@ -399,110 +399,151 @@
         "TestInternetGateway": {
             "Type": "AWS::EC2::InternetGateway"
         },
-        "ReverseProxySubnet": {
+        "MaliciousVpc": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {
+                    "Fn::FindInMap": [
+                        "SubnetConfig",
+                        "MaliciousVPC",
+                        "CIDR"
+                    ]
+                },
+                "EnableDnsSupport": true,
+                "EnableDnsHostnames": true,
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Malicious Vpc"
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": "Malicious"
+                    }
+                ]
+            }
+        },
+        "MaliciousSubnet": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
                 "VpcId": {
-                    "Ref": "TestVpc"
+                    "Ref": "MaliciousVpc"
                 },
                 "MapPublicIpOnLaunch": true,
                 "AvailabilityZone": {
                     "Fn::FindInMap": [
                         "SubnetConfig",
-                        "ReverseProxySubnet",
+                        "MaliciousSubnet",
                         "AZ"
                     ]
                 },
                 "CidrBlock": {
                     "Fn::FindInMap": [
                         "SubnetConfig",
-                        "ReverseProxySubnet",
+                        "MaliciousSubnet",
                         "CIDR"
                     ]
                 },
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Reverse Proxy Subnet"
+                        "Value": "Malicious Subnet"
                     },
                     {
                         "Key": "Environment",
-                        "Value": "Test"
+                        "Value": "Malicious"
                     }
                 ]
             }
         },
-        "ReverseProxySubnetRouteTableAssociation": {
-            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "MaliciousInternetGatewayAttach": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
             "Properties": {
-                "SubnetId": {
-                    "Ref": "ReverseProxySubnet"
+                "VpcId": {
+                    "Ref": "MaliciousVpc"
                 },
-                "RouteTableId": {
-                    "Ref": "TestPublicRouteTable"
+                "InternetGatewayId": {
+                    "Ref": "MaliciousInternetGateway"
                 }
             }
         },
-        "AppSubnet": {
+        "MaliciousPublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "MaliciousVpc"
+                }
+            }
+        },
+        "MaliciousPublicRoute": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "MaliciousPublicRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "MaliciousInternetGateway"
+                }
+            }
+        },
+        "MaliciousSubnetRouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "MaliciousSubnet"
+                },
+                "RouteTableId": {
+                    "Ref": "MaliciousPublicRouteTable"
+                }
+            }
+        },
+        "MaliciousInternetGateway": {
+            "Type": "AWS::EC2::InternetGateway"
+        },
+        "MaliciousSubnet": {
             "Type": "AWS::EC2::Subnet",
             "Properties": {
                 "VpcId": {
-                    "Ref": "TestVpc"
+                    "Ref": "MaliciousVpc"
                 },
                 "MapPublicIpOnLaunch": true,
                 "AvailabilityZone": {
                     "Fn::FindInMap": [
                         "SubnetConfig",
-                        "AppSubnet",
+                        "MaliciousSubnet",
                         "AZ"
                     ]
                 },
                 "CidrBlock": {
                     "Fn::FindInMap": [
                         "SubnetConfig",
-                        "AppSubnet",
+                        "MaliciousSubnet",
                         "CIDR"
                     ]
                 },
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "App Subnet"
+                        "Value": "Malicious Subnet"
                     },
                     {
                         "Key": "Environment",
-                        "Value": "Test"
+                        "Value": "Malicious"
                     }
                 ]
             }
         },
-        "AppSubnetRouteTableAssociation": {
-            "Type": "AWS::EC2::SubnetRouteTableAssociation",
-            "Properties": {
-                "SubnetId": {
-                    "Ref": "AppSubnet"
-                },
-                "RouteTableId": {
-                    "Ref": "TestPublicRouteTable"
-                }
-            }
-        },
-        "ReverseProxySecurityGroup": {
+        "TestSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
-                "GroupDescription": "Allow incoming internet http, and VPC ssh traffic",
+                "GroupDescription": "Allow incoming internet http, and ssh traffic",
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "tcp",
                         "FromPort": "22",
                         "ToPort": "22",
-                        "CidrIp": {
-                            "Fn::FindInMap": [
-                                "SubnetConfig",
-                                "VPC",
-                                "CIDR"
-                            ]
-                        }
+                        "CidrIp": "0.0.0.0/0"
                     },
                     {
                         "IpProtocol": "tcp",
@@ -523,7 +564,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Reverse Proxy Servers"
+                        "Value": "Test Servers"
                     },
                     {
                         "Key": "Environment",
@@ -532,47 +573,35 @@
                 ]
             }
         },
-        "AppSecurityGroup": {
+        "MaliciousSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
-                "GroupDescription": "Allow incoming internal app and ssh traffic",
+                "GroupDescription": "Allow incoming http and ssh traffic",
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "tcp",
                         "FromPort": "22",
                         "ToPort": "22",
-                        "CidrIp": {
-                            "Fn::FindInMap": [
-                                "SubnetConfig",
-                                "VPC",
-                                "CIDR"
-                            ]
-                        }
+                        "CidrIp": "0.0.0.0/0"
                     },
                     {
                         "IpProtocol": "tcp",
-                        "FromPort": "8080",
-                        "ToPort": "8080",
-                        "CidrIp": {
-                            "Fn::FindInMap": [
-                                "SubnetConfig",
-                                "VPC",
-                                "CIDR"
-                            ]
-                        }
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
                     }
                 ],
                 "VpcId": {
-                    "Ref": "TestVpc"
+                    "Ref": "MaliciousVpc"
                 },
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "App Servers"
+                        "Value": "Malicious Servers"
                     },
                     {
                         "Key": "Environment",
-                        "Value": "Test"
+                        "Value": "Malicious"
                     }
                 ]
             }
