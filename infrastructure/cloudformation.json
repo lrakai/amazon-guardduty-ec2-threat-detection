@@ -632,6 +632,7 @@
                                         "s3:PutObject",
                                         "guardduty:List*",
                                         "guardduty:Get*",
+                                        "guardduty:CreateDetector",
                                         "guardduty:DeleteDetector",
                                         "guardduty:UpdateDetector",
                                         "guardduty:CreateIPSet",
