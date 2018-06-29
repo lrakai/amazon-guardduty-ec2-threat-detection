@@ -91,49 +91,10 @@
                             "",
                             [
                                 "#!/bin/bash\n",
-                                "yum install -y haproxy-1.5.18-6.amzn2.x86_64\n",
-                                "cat <<EOF > /etc/haproxy/haproxy.cfg\n",
-                                "global\n",
-                                "    log         127.0.0.1 local2\n",
-                                "    chroot      /var/lib/haproxy\n",
-                                "    pidfile     /var/run/haproxy.pid\n",
-                                "    maxconn     4000\n",
-                                "    user        haproxy\n",
-                                "    group       haproxy\n",
-                                "    daemon\n",
-                                "    stats socket /var/lib/haproxy/stats\n",
-                                "defaults\n",
-                                "    mode                    http\n",
-                                "    log                     global\n",
-                                "    option                  httplog\n",
-                                "    option                  dontlognull\n",
-                                "    option http-server-close\n",
-                                "    option forwardfor       except 127.0.0.0/8\n",
-                                "    option                  redispatch\n",
-                                "    retries                 3\n",
-                                "    timeout http-request    10s\n",
-                                "    timeout queue           1m\n",
-                                "    timeout connect         10s\n",
-                                "    timeout client          1m\n",
-                                "    timeout server          1m\n",
-                                "    timeout http-keep-alive 10s\n",
-                                "    timeout check           10s\n",
-                                "    maxconn                 3000\n",
-                                "frontend http-in\n",
-                                "    bind *:80\n",
-                                "    default_backend app\n",
-                                "backend app\n",
-                                "    balance     roundrobin\n",
-                                "    server  app1 10.0.2.100:8080 check\n",
-                                "EOF\n",
-                                "systemctl enable haproxy\n",
-                                "systemctl start haproxy\n",
-                                "yum install -y ruby-2.0.0.648-33.amzn2.0.1.x86_64\n",
-                                "gem install serverspec -v 2.41.3\n",
-                                "useradd -G adm,wheel serverspec\n",
-                                "echo 'serverspec:1Cloud_Academy_Labs!' | chpasswd\n",
-                                "sed -i 's/\\(PasswordAuthentication \\).*/\\1yes/g' /etc/ssh/sshd_config\n",
-                                "systemctl restart sshd\n"
+                                "while [ $(aws guardduty list-detectors --region us-west-2 --output table | wc -l) -le 3 ]; do  echo waiting; sleep 1; done\n",
+                                "while [ $(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='Malicious Instance'\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\") == \"null\" ]; do sleep 1; done\n",
+                                "TARGET_IP=$(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='Malicious Instance'\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\")\n",
+                                "while true; do curl $TARGET_IP; sleep 2; done\n"
                             ]
                         ]
                     }
@@ -168,6 +129,7 @@
                             "Statement": [
                                 {
                                     "Action": [
+                                        "guardduty:List*",
                                         "ec2:Describe*"
                                     ],
                                     "Effect": "Allow",
@@ -236,16 +198,10 @@
                             "",
                             [
                                 "#!/bin/bash\n",
-                                "yum install -y docker-17.06.2ce-1.102.amzn2.x86_64\n",
-                                "systemctl enable docker\n",
-                                "systemctl start docker\n",
-                                "docker run -p 8080:80 -d --restart always --name tetris lrakai/tetris\n",
-                                "yum install -y ruby-2.0.0.648-33.amzn2.0.1.x86_64\n",
-                                "gem install serverspec -v 2.41.3\n",
-                                "useradd -G adm,wheel,docker serverspec\n",
-                                "echo 'serverspec:1Cloud_Academy_Labs!' | chpasswd\n",
-                                "sed -i 's/\\(PasswordAuthentication \\).*/\\1yes/g' /etc/ssh/sshd_config\n",
-                                "systemctl restart sshd\n"
+                                "while [ $(aws guardduty list-detectors --region us-west-2 --output table | wc -l) -le 3 ]; do  echo waiting; sleep 1; done\n",
+                                "while [ $(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='App Server'\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\") == \"null\" ]; do sleep 1; done\n",
+                                "TARGET_IP=$(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='App Server'\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\")\n",
+                                "while true; do ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no $TARGET_IP; sleep 2; done\n"
                             ]
                         ]
                     }
@@ -280,9 +236,10 @@
                             "Statement": [
                                 {
                                     "Action": [
-                                        "iam:*"
+                                        "guardduty:List*",
+                                        "ec2:Describe*"
                                     ],
-                                    "Effect": "Deny",
+                                    "Effect": "Allow",
                                     "Resource": "*"
                                 }
                             ]
@@ -506,39 +463,6 @@
         },
         "MaliciousInternetGateway": {
             "Type": "AWS::EC2::InternetGateway"
-        },
-        "MaliciousSubnet": {
-            "Type": "AWS::EC2::Subnet",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "MaliciousVpc"
-                },
-                "MapPublicIpOnLaunch": true,
-                "AvailabilityZone": {
-                    "Fn::FindInMap": [
-                        "SubnetConfig",
-                        "MaliciousSubnet",
-                        "AZ"
-                    ]
-                },
-                "CidrBlock": {
-                    "Fn::FindInMap": [
-                        "SubnetConfig",
-                        "MaliciousSubnet",
-                        "CIDR"
-                    ]
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "Malicious Subnet"
-                    },
-                    {
-                        "Key": "Environment",
-                        "Value": "Malicious"
-                    }
-                ]
-            }
         },
         "TestSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
