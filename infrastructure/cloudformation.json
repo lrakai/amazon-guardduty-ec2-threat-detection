@@ -89,8 +89,8 @@
                             [
                                 "#!/bin/bash\n",
                                 "while [ $(aws guardduty list-detectors --region us-west-2 --output table | wc -l) -le 3 ]; do  echo waiting; sleep 1; done\n",
-                                "while [ $(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='Malicious Instance'\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\") == \"null\" ]; do sleep 1; done\n",
-                                "TARGET_IP=$(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='Malicious Instance'\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\")\n",
+                                "while [ $(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='Malicious Instance'\" \"Name=instance-state-name,Values=running\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\") == \"null\" ]; do sleep 1; done\n",
+                                "TARGET_IP=$(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='Malicious Instance'\" \"Name=instance-state-name,Values=running\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\")\n",
                                 "while true; do curl $TARGET_IP; sleep 15; done\n"
                             ]
                         ]
@@ -196,8 +196,8 @@
                             [
                                 "#!/bin/bash\n",
                                 "while [ $(aws guardduty list-detectors --region us-west-2 --output table | wc -l) -le 3 ]; do  echo waiting; sleep 1; done\n",
-                                "while [ $(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='App Server'\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\") == \"null\" ]; do sleep 1; done\n",
-                                "TARGET_IP=$(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='App Server'\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\")\n",
+                                "while [ $(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='App Server'\" \"Name=instance-state-name,Values=running\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\") == \"null\" ]; do sleep 1; done\n",
+                                "TARGET_IP=$(aws ec2 describe-instances --region us-west-2 --filters \"Name=tag:Type,Values='App Server'\" \"Name=instance-state-name,Values=running\" --query 'Reservations[0].Instances[0].PublicIpAddress' | tr -d \\\")\n",
                                 "while true; do ssh -o StrictHostKeyChecking=no -o PasswordAuthentication=no $TARGET_IP; sleep 15; done\n"
                             ]
                         ]
